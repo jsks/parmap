@@ -1,0 +1,10 @@
+---
+BasedOnStyle: LLVM
+Language: Cpp
+AllowShortFunctionsOnASingleLine: Inline
+ColumnLimit: 100
+Cpp11BracedListStyle: false
+IndentCaseLabels: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+SpaceAfterCStyleCast: true
+...
