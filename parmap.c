@@ -1,5 +1,5 @@
 /*
- * pmap.c - Parallelized of shell commands
+ * parmap.c - Parallelized execution of a shell command
  *
  * Copyright (c) 2020 Joshua Krusell
  * License: MIT
@@ -25,6 +25,7 @@
 
 #define USAGE "Usage: %s [OPTION]... <variable> <command>"
 
+extern char **environ;
 static const char *progname;
 
 /* clang-format off */
@@ -177,7 +178,7 @@ ssize_t parse_stdin(char *token, size_t bufsize) {
 
     *p++ = ch;
     if ((len = p - token) == bufsize) {
-      warnx("Buffer size");
+      warnx("stdin argument exceeds buffer size");
       return -1;
     }
   }
@@ -230,12 +231,25 @@ int main(int argc, char *argv[]) {
   if (max_jobs < 1 && (max_jobs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
     err(EXIT_FAILURE, NULL);
 
+  long int arg_max;
+  if ((arg_max = sysconf(_SC_ARG_MAX)) == -1)
+    err(EXIT_FAILURE, NULL);
+
+  // Follow POSIX standard for xargs such that the combined
+  // commandline and environment passed to exec* does not exceed
+  // ARG_MAX - 2048.
+  size_t bufsize = arg_max - 2048 - strlen(variable) - strlen(cmd) - 8;
+
+  char **p = environ;
+  while (*p)
+    bufsize -= strlen(*p++) + 1;
+
+  ssize_t len;
+  if (!(token = malloc(bufsize)))
+    err(EXIT_FAILURE, NULL);
+
   pid_t pid;
   int rv = 0;
-
-  size_t bufsize = 1024;
-  ssize_t len;
-  token = malloc(bufsize);
 
   while ((len = parse_stdin(token, bufsize)) > 0) {
     if ((setenv(variable, token, 1)) < 0)
@@ -249,7 +263,7 @@ int main(int argc, char *argv[]) {
         err(EXIT_FAILURE, NULL);
 
       execl("/bin/sh", "sh", "-c", cmd, NULL);
-      _exit(EXIT_FAILURE);
+      err(EXIT_FAILURE, "execl failed");
     }
 
     spawned_jobs++;
