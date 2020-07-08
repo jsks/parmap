@@ -33,5 +33,5 @@ parmap.1: parmap.1.md
 	pandoc -s -t man parmap.1.md -o parmap.1
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/parmap $(DESTDIR)$(MANDIR)/parmap.1
-	-rmdir $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)
+	rm -f $(DESTDIR)$(BINDIR)/parmap $(DESTDIR)$(MANDIR)/man1/parmap.1
+	-rmdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1
