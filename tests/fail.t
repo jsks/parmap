@@ -3,10 +3,10 @@ Setup:
 
 Unknown command should fail:
   $ print 1 2 3 4 | parmap -m 1 x 'sdf $x'
-  sh: sdf: command not found
-  sh: sdf: command not found
-  sh: sdf: command not found
-  sh: sdf: command not found
+  sh: sdf: *not found (glob)
+  sh: sdf: *not found (glob)
+  sh: sdf: *not found (glob)
+  sh: sdf: *not found (glob)
   [1]
 
 Unmatched single quote should fail:
@@ -27,7 +27,7 @@ Invalid argument to `-m` should fail:
 
 Unknown argument should fail:
   $ print 1 2 | parmap -X x 'echo $x'
-  *parmap: invalid option -- 'X' (glob)
+  *parmap: * option -- *X* (glob)
   parmap: Usage: * (glob)
   [1]
 
