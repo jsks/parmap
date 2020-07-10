@@ -24,7 +24,7 @@
 #define VERSION "(test-build)"
 #endif
 
-#define USAGE "Usage: %s [OPTION]... <variable> <command>"
+#define USAGE "Usage: %s [option]... variable command"
 
 extern char **environ;
 static const char *progname;
@@ -65,12 +65,12 @@ int waitall(bool, int *);
 
 void help(void) {
   printf(USAGE "\n\n", progname);
-  printf("Invokes a command in parallel with input from stdin\n\n"
+  printf("Invokes a command in parallel for each argument parsed from stdin.\n\n"
          "Options:\n"
+         "  -d, --delimiter\t Set delimiter for parsing arguments from stdin\n"
          "  -h, --help\t\t Help message\n"
-         "  -v, --version\t\t Print version number\n"
-         "  -d, --delimiter\t Placeholder text\n"
-         "  -m, --max_jobs\t Maximum number of jobs to run in parallel\n");
+         "  -m, --max_jobs\t Maximum number of jobs to run in parallel\n"
+         "  -v, --version\t\t Print version number\n");
 }
 
 void usage(void) {
