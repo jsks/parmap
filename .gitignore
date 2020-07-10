@@ -1,1 +1,2 @@
 parmap
+tests/*.t.err
