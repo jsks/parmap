@@ -27,7 +27,7 @@ Invalid argument to `-m` should fail:
 
 Unknown argument should fail:
   $ print 1 2 | parmap -X x 'echo $x'
-  *parmap: * option -- *X* (glob)
+  *parmap: *X* (glob)
   parmap: Usage: * (glob)
   [1]
 

@@ -27,7 +27,7 @@ install: parmap
 	install -m644 parmap.1 $(DESTDIR)$(MANDIR)/man1/parmap.1
 
 parmap: parmap.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
 
 parmap.1: parmap.1.md
 	pandoc -s -t man parmap.1.md -o parmap.1
