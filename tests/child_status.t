@@ -6,11 +6,17 @@ Normal operation should return 0:
   0
 
 If a task errors, then the remaining tasks continue, but the final
-exit status is non-zero:
+exit status should be non-zero:
   $ print {1..4} | parmap -m 1 x '[ "$x" = 2 ] && exit 127; echo $x'
   1
   3
   4
+  [1]
+
+If a task errors when running commands in parallel, the final exit
+status should be non-zero:
+  $ print {1..2} | parmap -m 2 x '[ "$x" = 2 ] && exit 127; echo $x'
+  1
   [1]
 
 If command returns 255, wait for spawned jobs and then immediately

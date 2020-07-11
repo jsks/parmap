@@ -85,7 +85,9 @@ int cleanup(void) {
   int child_status = 0;
 
   free(token);
-  return waitall(true, &child_status);
+  waitall(true, &child_status);
+
+  return child_status;
 }
 
 void err_cleanup(int errnum, char *fmt, ...) {
