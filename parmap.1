@@ -11,8 +11,8 @@ parmap - parallelized execution of a shell command
 .SH DESCRIPTION
 .PP
 \f[B]parmap\f[R] reads space, tab, and newline delimited arguments from
-standard input and invokes \f[I]command\f[R] in parallel for each
-argument using \f[B]/bin/sh\f[R].
+standard input and invokes using \f[B]/bin/sh\f[R] \f[I]command\f[R] in
+parallel for each argument.
 For each invocation, \f[I]variable\f[R] is set to the corresponding
 parsed argument and made available as an exported environment variable.
 .PP
@@ -63,8 +63,8 @@ $ echo 1 2 3 4 | parmap x \[aq]echo number: $x\[aq]
 \f[R]
 .fi
 .PP
-If using \f[B]zsh\f[R], spaces in filenames can be escaped using quotes
-with a glob modifier.
+If using \f[B]zsh\f[R], spaces in filenames can be escaped with quotes
+by using a glob modifier.
 For example:
 .IP
 .nf

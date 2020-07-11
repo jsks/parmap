@@ -14,8 +14,8 @@ parmap - parallelized execution of a shell command
 # DESCRIPTION
 
 **parmap** reads space, tab, and newline delimited arguments from
-standard input and invokes *command* in parallel for each argument
-using **/bin/sh**. For each invocation, *variable* is set to the
+standard input and invokes using **/bin/sh** *command* in parallel for
+each argument. For each invocation, *variable* is set to the
 corresponding parsed argument and made available as an exported
 environment variable.
 
@@ -65,8 +65,8 @@ Simple example using default options:
 $ echo 1 2 3 4 | parmap x 'echo number: $x'
 ```
 
-If using **zsh**, spaces in filenames can be escaped using quotes with
-a glob modifier. For example:
+If using **zsh**, spaces in filenames can be escaped with quotes by
+using a glob modifier. For example:
 
 ```sh
 $ touch "example file.txt"
