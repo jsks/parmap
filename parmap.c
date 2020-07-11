@@ -266,14 +266,13 @@ int main(int argc, char *argv[]) {
   while (*p)
     bufsize -= strlen(*p++) + 1;
 
-  ssize_t len;
   if (!(token = malloc(bufsize)))
     err(EXIT_FAILURE, NULL);
 
   pid_t pid;
   int rv = 0, wait_status = 0, child_status = 0;
 
-  while ((len = parse_stdin(token, bufsize)) > 0) {
+  while ((parse_stdin(token, bufsize)) > 0) {
     if ((setenv(variable, token, 1)) < 0)
       err_cleanup(errno, "setenv");
 
