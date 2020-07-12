@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
       // Prevent child process from possibly stealing parent stdin
       // input
       if ((fd = open("/dev/null", O_RDONLY)) == -1 || (dup2(fd, STDIN_FILENO)) == -1)
-        err_cleanup(errno, "Failed to attach stdin to /dev/null");
+        err(EXIT_FAILURE, "Failed to attach stdin to /dev/null");
 
       execl("/bin/sh", "sh", "-c", cmd, NULL);
       err(EXIT_FAILURE, "execl");
