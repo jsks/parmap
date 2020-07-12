@@ -11,13 +11,19 @@ parmap - parallelized execution of a shell command
 .SH DESCRIPTION
 .PP
 \f[B]parmap\f[R] reads space, tab, and newline delimited arguments from
-standard input and invokes using \f[B]/bin/sh\f[R] \f[I]command\f[R] in
-parallel for each argument.
+standard input and invokes \f[I]command\f[R] in parallel for each
+argument.
 For each invocation, \f[I]variable\f[R] is set to the corresponding
-parsed argument and made available as an exported environment variable.
+parsed argument and made available to \f[I]command\f[R] as an exported
+environment variable.
 .PP
-Delimiters can be escaped using either a backslash or surrounding an
-argument with single/double quotes and can be changed with the
+\f[I]command\f[R] should consist of a single quoted string to prevent
+shell expansions before execution.
+When invoked by \f[B]parmap\f[R] it will be interpreted by
+\f[B]/bin/sh\f[R] and hence should conform to valid POSIX shell syntax.
+.PP
+Delimiters for arguments read from standard input can be escaped using
+either a backslash or single/double quotes and can be changed with the
 commandline option \f[B]-d\f[R].
 .PP
 Processing continues for each argument until one of three conditions:
@@ -32,7 +38,7 @@ A \f[I]command\f[R] invocation is terminated by a signal
 -d, --delimiter \f[I]delim\f[R]
 Delimiter(s) for parsing standard input.
 A delimiter must be a 7-bit ascii character and cannot be the null byte.
-Multiple characters will be interpreted as multiple delimiters.
+Multiple characters will be interpreted as separate delimiters.
 The defaults are space, tab, and newline.
 .TP
 -h, --help

@@ -262,17 +262,32 @@ int main(int argc, char *argv[]) {
   // Follow POSIX standard for xargs such that the combined
   // commandline and environment passed to exec* does not exceed
   // ARG_MAX - 2048.
-  size_t bufsize = arg_max - 2048 - strlen(variable) - strlen(cmd) - 8;
+  ssize_t bufsize = arg_max - 2048 - strlen(variable) - strlen(cmd) - 8;
 
   char **p = environ;
   while (*p)
     bufsize -= strlen(*p++) + 1;
 
+  if (bufsize <= 0)
+    errx(EXIT_FAILURE, "Environment too large for token buffer.");
+
   if (!(token = malloc(bufsize)))
     err(EXIT_FAILURE, NULL);
 
   pid_t pid;
-  int rv = 0, wait_status = 0, child_status = 0;
+
+  // Cumulative return status of all child processes. Tracks if any
+  // child exits with a non-zero status so that we can eventually
+  // return EXIT_FAILURE.
+  int rv = 0;
+
+  // Return status of child processes from single invocation of
+  // `waitall`. Gets reset to zero with every function call.
+  int child_status = 0;
+
+  // Return value of `waitall`, indicates if a child process exited in
+  // a way that we should stop processing stdin and exit.
+  int wait_status = 0;
 
   while ((parse_stdin(token, bufsize)) > 0) {
     if ((setenv(variable, token, 1)) < 0)
