@@ -28,11 +28,11 @@ Invalid argument to `-m` should fail:
 Unknown argument should fail:
   $ print 1 2 | parmap -X x 'echo $x'
   *parmap: *X* (glob)
-  parmap: Usage: * (glob)
+  Usage: * (glob)
   [1]
 
 Missing command argument should fail:
   $ print 1 2 | parmap x
-  parmap: Usage: * (glob)
+  Usage: * (glob)
   parmap: Missing command argument
   [1]

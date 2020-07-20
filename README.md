@@ -13,7 +13,6 @@ compiled against musl and on NetBSD/amd64.
 To compile simply invoke `make`. There are no external dependencies.
 
 ``` sh
-# Assumes GNU Make. Substitute `gmake` if compiling on *BSD
 $ make
 
 # Optional, install in /usr/local
@@ -26,7 +25,7 @@ Basic usage consists of specifying a variable name to contain the
 parsed argument from standard input and a quoted shell command that
 may reference the specified variable.
 
-For example, using the default delimiters of space, tab, and newline:
+For example, using the default delimiters of whitespace characters:
 
 ``` sh
 # Output order may vary

@@ -10,7 +10,7 @@ parmap - parallelized execution of a shell command
 \f[B]parmap\f[R] [option]\&... \f[I]variable\f[R] \f[I]command\f[R]
 .SH DESCRIPTION
 .PP
-\f[B]parmap\f[R] reads space, tab, and newline delimited arguments from
+\f[B]parmap\f[R] reads arguments delimited by whitespace characters from
 standard input and invokes \f[I]command\f[R] in parallel for each
 argument.
 For each invocation, \f[I]variable\f[R] is set to the corresponding
@@ -39,7 +39,7 @@ A \f[I]command\f[R] invocation is terminated by a signal
 Delimiter(s) for parsing standard input.
 A delimiter must be a 7-bit ascii character and cannot be the null byte.
 Multiple characters will be interpreted as separate delimiters.
-The defaults are space, tab, and newline.
+The default is whitespace characters.
 .TP
 -h, --help
 Print help message and exit.

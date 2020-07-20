@@ -13,11 +13,11 @@ parmap - parallelized execution of a shell command
 
 # DESCRIPTION
 
-**parmap** reads space, tab, and newline delimited arguments from
-standard input and invokes *command* in parallel for each
-argument. For each invocation, *variable* is set to the corresponding
-parsed argument and made available to *command* as an exported
-environment variable.
+**parmap** reads arguments delimited by whitespace characters from
+standard input and invokes *command* in parallel for each argument.
+For each invocation, *variable* is set to the corresponding parsed
+argument and made available to *command* as an exported environment
+variable.
 
 *command* should consist of a single quoted string to prevent shell
 expansions before execution. When invoked by **parmap** it will be
@@ -39,8 +39,8 @@ Processing continues for each argument until one of three conditions:
 -d, \--delimiter *delim*
 : Delimiter(s) for parsing standard input. A delimiter must be a 7-bit
   ascii character and cannot be the null byte. Multiple characters
-  will be interpreted as separate delimiters. The defaults are space,
-  tab, and newline.
+  will be interpreted as separate delimiters. The default is
+  whitespace characters.
 
 -h, \--help
 : Print help message and exit.

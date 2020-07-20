@@ -13,7 +13,7 @@ clean:
 	rm -f parmap
 
 debug: VERSION := $(VERSION)-debug
-debug: CFLAGS += -O0 -g -fsanitize=address
+debug: CFLAGS += -O0 -g
 debug: clean parmap
 
 doc: parmap.1

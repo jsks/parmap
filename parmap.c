@@ -7,6 +7,7 @@
 
 #define _DEFAULT_SOURCE
 
+#include <ctype.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -14,6 +15,7 @@
 #include <libgen.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,47 +26,39 @@
 #define VERSION "(test-build)"
 #endif
 
-#define USAGE "Usage: %s [option]... variable command"
-
 extern char **environ;
 static const char *progname;
 
-/* clang-format off */
 static struct option longopts[] = {
   { "help", no_argument, NULL, 'h' },
   { "version", no_argument, NULL, 'v' },
   { "delimiter", required_argument, NULL, 'd' },
   { "max_jobs", required_argument, NULL, 'm' },
-  { NULL, no_argument, NULL, 0 }
+  { NULL, no_argument, NULL, 0 },
 };
-/* clang-format on */
 
-/* Maximum number of commands to run in parallel */
-static long int max_jobs = 0;
+static long int max_jobs = 0, running_jobs = 0;
 
-/* Global count of currently spawned child processes */
-static long int spawned_jobs = 0;
+static char *delims = NULL;
 
-/* Default delimiters for parsing stdin input */
-static char *delims = " \n\t";
-
-/* Buffer holding parsed arguments from stdin */
-static char *token;
-
-/* FSM states for stdin parser */
-enum ParseState { NORMAL, QUOTED, NORMAL_BACKSLASH, QUOTED_BACKSLASH };
+enum ParseState {
+  NORMAL,
+  QUOTED,
+  NORMAL_BACKSLASH,
+  QUOTED_BACKSLASH,
+};
 
 void help(void);
-void usage(void);
+void usage(FILE *);
 void version(void);
-int cleanup(void);
 void err_cleanup(int, char *, ...);
 bool isdelim(int);
-ssize_t parse_stdin(char *, size_t);
+size_t parse_stdin(char *, size_t);
 int waitall(bool, int *);
 
 void help(void) {
-  printf(USAGE "\n\n", progname);
+  usage(stdout);
+  printf("\n");
   printf("Invokes a command in parallel for each argument parsed from stdin.\n\n"
          "Options:\n"
          "  -d, --delimiter\t Set delimiter for parsing arguments from stdin\n"
@@ -73,28 +67,21 @@ void help(void) {
          "  -v, --version\t\t Print version number\n");
 }
 
-void usage(void) {
-  warnx(USAGE, progname);
+void usage(FILE *stream) {
+  fprintf(stream, "Usage: %s [option]... variable command\n", progname);
 }
 
 void version(void) {
   printf("%s %s\n", progname, VERSION);
 }
 
-int cleanup(void) {
+void err_cleanup(int errnum, char *fmt, ...) {
   int child_status = 0;
-
-  free(token);
   waitall(true, &child_status);
 
-  return child_status;
-}
-
-void err_cleanup(int errnum, char *fmt, ...) {
-  if (!fmt)
+  if (!fmt) {
     fmt = "Fatal error";
-
-  cleanup();
+  }
 
   fprintf(stderr, "%s: ", progname);
 
@@ -103,8 +90,9 @@ void err_cleanup(int errnum, char *fmt, ...) {
   vfprintf(stderr, fmt, ap);
   va_end(ap);
 
-  if (errnum != 0)
+  if (errnum != 0) {
     fprintf(stderr, ": %s", strerror(errnum));
+  }
 
   fprintf(stderr, "\n");
   exit(EXIT_FAILURE);
@@ -112,7 +100,7 @@ void err_cleanup(int errnum, char *fmt, ...) {
 
 int waitall(bool reap_all, int *child_status) {
   pid_t pid;
-  int wstatus, rv = 0, wflags = (reap_all || spawned_jobs == max_jobs) ? 0 : WNOHANG;
+  int wstatus, rv = 0, wflags = (reap_all || running_jobs == max_jobs) ? 0 : WNOHANG;
   *child_status = 0;
 
   // Follow the xargs POSIX spec, if a command returns 255 or is
@@ -120,7 +108,7 @@ int waitall(bool reap_all, int *child_status) {
   // after waiting for the remaining spawned children. Unlike xargs
   // though, simply return 1 as the exit status for all errors.
   while ((pid = waitpid(-1, &wstatus, wflags)) > 0) {
-    spawned_jobs--;
+    running_jobs--;
 
     if (WIFSIGNALED(wstatus)) {
       warnx("%d: terminated by signal %s", pid, strsignal(WTERMSIG(wstatus)));
@@ -134,30 +122,25 @@ int waitall(bool reap_all, int *child_status) {
       }
     }
 
-    if (!reap_all)
+    if (!reap_all) {
       break;
+    }
   }
 
   // Same as *BSD xargs, exit on error which might potentially leave
   // behind zombie children.
-  if (pid == -1 && errno != ECHILD)
+  if (pid == -1 && errno != ECHILD) {
     err(EXIT_FAILURE, "waitpid");
+  }
 
   return rv;
 }
 
 bool isdelim(int ch) {
-  char *p = delims;
-  while (*p) {
-    if (ch == *p++) {
-      return true;
-    }
-  }
-
-  return false;
+  return (!delims) ? isspace(ch) != 0 : strchr(delims, ch) != NULL;
 }
 
-ssize_t parse_stdin(char *token, size_t bufsize) {
+size_t parse_stdin(char *token, size_t bufsize) {
   enum ParseState state = NORMAL;
 
   size_t len = 0;
@@ -207,12 +190,14 @@ ssize_t parse_stdin(char *token, size_t bufsize) {
     }
 
     *p++ = ch;
-    if ((len = p - token) == bufsize)
+    if ((len = p - token) == bufsize) {
       err_cleanup(0, "Input token exceeds buffer size");
+    }
   }
 
-  if (state == QUOTED)
+  if (state == QUOTED) {
     err_cleanup(0, "Missing closing %s-quote, aborting", (quotec == '\'') ? "single" : "double");
+  }
 
   *p = '\0';
   return len;
@@ -238,60 +223,54 @@ int main(int argc, char *argv[]) {
       case 'm':
         errno = 0;
         max_jobs = strtol(optarg, &end, 10);
-        if (*end != '\0' || errno == ERANGE)
+        if (*end != '\0' || errno == ERANGE) {
           errx(EXIT_FAILURE, "Invalid number '%s' for argument '-m'", optarg);
+        }
         break;
       default:
-        usage();
+        usage(stderr);
         exit(EXIT_FAILURE);
     }
   }
 
   if (!(optind < argc - 1)) {
-    usage();
+    usage(stderr);
     errx(EXIT_FAILURE, "Missing command argument");
   }
 
   char *variable = argv[optind], *cmd = argv[optind + 1];
 
-  if (max_jobs < 1)
+  if (max_jobs < 1) {
     max_jobs = sysconf(_SC_NPROCESSORS_ONLN);
+  }
 
   long int arg_max = sysconf(_SC_ARG_MAX);
 
   // Follow POSIX standard for xargs such that the combined
   // commandline and environment passed to exec* does not exceed
   // ARG_MAX - 2048.
-  ssize_t bufsize = arg_max - 2048 - strlen(variable) - strlen(cmd) - 8;
+  ptrdiff_t bufsize = arg_max - 2048 - strlen(variable) - strlen(cmd) - 8;
 
   char **p = environ;
   while (*p)
     bufsize -= strlen(*p++) + 1;
 
-  if (bufsize <= 0)
+  if (bufsize <= 0) {
     errx(EXIT_FAILURE, "Environment too large for token buffer.");
+  }
 
-  if (!(token = malloc(bufsize)))
+  char *token;
+  if (!(token = malloc(bufsize))) {
     err(EXIT_FAILURE, NULL);
+  }
 
   pid_t pid;
-
-  // Cumulative return status of all child processes. Tracks if any
-  // child exits with a non-zero status so that we can eventually
-  // return EXIT_FAILURE.
-  int rv = 0;
-
-  // Return status of child processes from single invocation of
-  // `waitall`. Gets reset to zero with every function call.
-  int child_status = 0;
-
-  // Return value of `waitall`, indicates if a child process exited in
-  // a way that we should stop processing stdin and exit.
-  int wait_status = 0;
+  int rv = 0, child_status = 0, wait_status = 0;
 
   while ((parse_stdin(token, bufsize)) > 0) {
-    if ((setenv(variable, token, 1)) < 0)
+    if ((setenv(variable, token, 1)) < 0) {
       err_cleanup(errno, "setenv");
+    }
 
     if ((pid = fork()) == -1) {
       err_cleanup(errno, "fork");
@@ -300,20 +279,23 @@ int main(int argc, char *argv[]) {
 
       // Prevent child process from possibly stealing parent stdin
       // input
-      if ((fd = open("/dev/null", O_RDONLY)) == -1 || (dup2(fd, STDIN_FILENO)) == -1)
+      if ((fd = open("/dev/null", O_RDONLY)) == -1 || (dup2(fd, STDIN_FILENO)) == -1) {
         err(EXIT_FAILURE, "Failed to attach stdin to /dev/null");
+      }
 
       execl("/bin/sh", "sh", "-c", cmd, NULL);
       err(EXIT_FAILURE, "execl");
     }
 
-    spawned_jobs++;
+    running_jobs++;
     wait_status = waitall(false, &child_status);
     rv |= child_status;
 
-    if (wait_status < 0)
+    if (wait_status < 0) {
       break;
+    }
   }
 
-  return cleanup() < 0 || rv != 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+  waitall(true, &child_status);
+  return child_status < 0 || rv != 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
