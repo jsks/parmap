@@ -19,6 +19,10 @@ $ make
 $ sudo make install
 ```
 
+Building the debug target or invoking the integration tests with `make
+test` require GNU Make. If compiling on *BSD substitute `make` for
+`gmake`.
+
 ## Usage
 
 Basic usage consists of specifying a variable name to contain the
